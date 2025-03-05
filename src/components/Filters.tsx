@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from "react";
-import { FaSearch } from "react-icons/fa";
-import DatePicker from "react-datepicker";
-import "react-datepicker/dist/react-datepicker.css";
-import "./DatePicker.css"; // Custom DatePicker styles
+import { FaSearch, FaCalendarAlt } from "react-icons/fa";
+import { DateRange, Range, RangeKeyDict } from "react-date-range";
+import "react-date-range/dist/styles.css";
+import "react-date-range/dist/theme/default.css";
+import "./DatePicker.css";
 
 interface FilterKeyOption {
   value: string;
@@ -64,7 +65,7 @@ const filterConfigs: Record<string, FilterConfig> = {
   }
 };
 
-type DateRange = [Date | null, Date | null];
+type DateRangeTuple = [Date | null, Date | null];
 
 const Filters: React.FC<FiltersProps> = ({
   limit,
@@ -82,7 +83,8 @@ const Filters: React.FC<FiltersProps> = ({
   const [localFilterKey, setLocalFilterKey] = useState(filterKey);
   const [localFilterValue, setLocalFilterValue] = useState(filterValue);
   const [localSearchTerm, setLocalSearchTerm] = useState(searchTerm);
-  const [dateRange, setDateRange] = useState<DateRange>([null, null]);
+  const [dateRange, setDateRange] = useState<DateRangeTuple>([null, null]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
 
   const pageSizeOptions = [5, 10, 20, 50];
 
@@ -135,24 +137,25 @@ const Filters: React.FC<FiltersProps> = ({
     }
   };
 
+  // Updated handler using RangeKeyDict and handling undefined dates
+  const handleDateRangeChange = (rangesByKey: RangeKeyDict) => {
+    const selection = rangesByKey.selection as Range;
+    const startDate = selection.startDate ?? null;
+    const endDate = selection.endDate ?? null;
+    setDateRange([startDate, endDate]);
 
-
-  const handleDateRangeChange = (update: DateRange) => {
-    setDateRange(update);
-    const [start, end] = update;
-    
-    if (start && end) {
+    if (startDate && endDate) {
       // Reset search term and other filters before setting date range
       setLocalSearchTerm('');
       setSearchTerm('');
       setShowSearch(false);
-      // Format dates as ISO strings and set as filter value
+      const formattedDates = `${startDate.toISOString()},${endDate.toISOString()}`;
       setLocalFilterKey('birthDate');
-      setLocalFilterValue(`${start.toISOString()},${end.toISOString()}`);
+      setLocalFilterValue(formattedDates);
       setFilterKey('birthDate');
-      setFilterValue(`${start.toISOString()},${end.toISOString()}`);
+      setFilterValue(formattedDates);
+      setShowDatePicker(false);
     } else {
-      // Clear filter if either date is null
       setLocalFilterKey('');
       setLocalFilterValue('');
       setFilterKey('');
@@ -161,7 +164,6 @@ const Filters: React.FC<FiltersProps> = ({
   };
 
   const handleFilterSelect = (key: string, value: string) => {
-    // If value is empty, reset all filters
     if (!value) {
       setLocalFilterKey('');
       setLocalFilterValue('');
@@ -171,11 +173,9 @@ const Filters: React.FC<FiltersProps> = ({
       return;
     }
 
-    // If selecting a non-date filter, reset date range
     if (key !== 'birthDate') {
       setDateRange([null, null]);
     }
-    // If selecting a new filter when date range is active, reset it
     if (filterKey === 'birthDate' && key !== 'birthDate') {
       setDateRange([null, null]);
     }
@@ -191,54 +191,46 @@ const Filters: React.FC<FiltersProps> = ({
       case 'dateRange':
         return (
           <div className="relative inline-block">
-            <DatePicker
-              selectsRange={true}
-              startDate={dateRange[0]}
-              endDate={dateRange[1]}
-              onChange={handleDateRangeChange}
-              className="px-3 py-1.5 text-gray-700 focus:outline-none focus:ring-1 focus:ring-blue-500 min-w-[220px] cursor-pointer"
-              placeholderText="Birth date"
-              dateFormat="MM/dd/yyyy"
-              isClearable={true}
-              monthsShown={2}
-              showPopperArrow={false}
-              popperClassName="date-picker-popper"
-              popperPlacement="bottom-start"
-              calendarClassName="shadow-lg border-0"
-              renderCustomHeader={({ 
-                date,
-                decreaseMonth,
-                increaseMonth,
-                prevMonthButtonDisabled,
-                nextMonthButtonDisabled
-              }) => (
-                <div className="flex items-center justify-between px-2 py-2">
-                  <button
-                    onClick={decreaseMonth}
-                    disabled={prevMonthButtonDisabled}
-                    type="button"
-                    className="p-1 hover:bg-gray-100 rounded-full disabled:opacity-50 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
-                    </svg>
-                  </button>
-                  <div className="text-gray-700 font-medium">
-                    {date.toLocaleString('default', { month: 'long', year: 'numeric' })}
-                  </div>
-                  <button
-                    onClick={increaseMonth}
-                    disabled={nextMonthButtonDisabled}
-                    type="button"
-                    className="p-1 hover:bg-gray-100 rounded-full disabled:opacity-50 transition-colors"
-                  >
-                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                    </svg>
-                  </button>
-                </div>
-              )}
+            <input
+              type="text"
+              readOnly
+              value={
+                dateRange[0] && dateRange[1]
+                  ? `${dateRange[0].toLocaleDateString()} - ${dateRange[1].toLocaleDateString()}`
+                  : ""
+              }
+              placeholder="Birth date"
+              onClick={() => setShowDatePicker(true)}
+              className="px-3 py-1.5 pr-10 text-gray-700 cursor-pointer min-w-[220px]"
             />
+            <div
+              onClick={() => setShowDatePicker(true)}
+              className="absolute inset-y-0 right-0 flex items-center pr-2 cursor-pointer"
+            >
+              <FaCalendarAlt className="text-gray-400" />
+            </div>
+            {showDatePicker && (
+              <div className="absolute z-10 mt-2 bg-white shadow-lg border rounded">
+                <DateRange
+                  editableDateInputs={true}
+                  onChange={handleDateRangeChange}
+                  moveRangeOnFirstSelection={false}
+                  ranges={[
+                    {
+                      startDate: dateRange[0] || new Date(),
+                      endDate: dateRange[1] || new Date(),
+                      key: 'selection',
+                    },
+                  ]}
+                />
+                <button
+                  onClick={() => setShowDatePicker(false)}
+                  className="w-full text-center py-1 bg-gray-200 hover:bg-gray-300 rounded-b"
+                >
+                  Close
+                </button>
+              </div>
+            )}
           </div>
         );
       case 'dropdown':
@@ -250,7 +242,7 @@ const Filters: React.FC<FiltersProps> = ({
           >
             <option value="">{opt.label}</option>
             {(opt.options || config.options)?.map((option) => {
-              const { value, label } = typeof option === 'string' 
+              const { value, label } = typeof option === 'string'
                 ? { value: option, label: option }
                 : option;
               return (
@@ -261,7 +253,6 @@ const Filters: React.FC<FiltersProps> = ({
             })}
           </select>
         );
-
       default:
         return (
           <input
@@ -280,7 +271,6 @@ const Filters: React.FC<FiltersProps> = ({
 
   return (
     <div className="flex items-center gap-3 mb-4 bg-white p-4 rounded shadow-sm">
-      {/* Entries Dropdown */}
       <div className="flex items-center gap-2">
         <select
           value={limit}
@@ -298,7 +288,6 @@ const Filters: React.FC<FiltersProps> = ({
 
       <div className="h-6 w-px bg-gray-300 mx-2"></div>
 
-      {/* Search with Icon */}
       <div className="flex items-center">
         <button
           onClick={handleSearchIconClick}
@@ -320,7 +309,6 @@ const Filters: React.FC<FiltersProps> = ({
 
       <div className="h-6 w-px bg-gray-300 mx-2"></div>
 
-      {/* Filter Fields */}
       <div className="flex items-center gap-3">
         {filterKeyOptions.map((opt) => (
           <div key={opt.value} className="flex items-center gap-2">
@@ -329,19 +317,19 @@ const Filters: React.FC<FiltersProps> = ({
         ))}
       </div>
 
-      {/* Reset Button */}
       <button
         onClick={() => {
           setLocalFilterKey('');
           setLocalFilterValue('');
-            setLocalSearchTerm('');
-            onReset();
-          }}
-          className="px-4 py-1.5 bg-yellow text-black rounded hover:bg-yellow-600 transition-colors ms-4 cursor-pointer"
-        >
-          Reset
+          setLocalSearchTerm('');
+          setDateRange([null, null]);
+          onReset();
+        }}
+        className="px-4 py-1.5 bg-yellow text-black rounded hover:bg-yellow-600 transition-colors ms-4 cursor-pointer"
+      >
+        Reset
       </button>
-    </div>  
+    </div>
   );
 };
 

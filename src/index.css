@@ -11,3 +11,6 @@
 body {
   font-family: "Neutra Text", sans-serif;
 }
+input::placeholder {
+  color: #4a5568;
+}

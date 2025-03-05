@@ -68,7 +68,11 @@ export const fetchProducts = createAsyncThunk<ProductsResponse, FetchProductsPar
     if (searchTerm) {
       url = `https://dummyjson.com/products/search?q=${searchTerm}&limit=${limit}&skip=${skip}`;
     }
-    // If there's no search but there's a filter, use the filter
+    // If category filter is applied
+    else if (filterKey === 'category' && filterValue) {
+      url = `https://dummyjson.com/products/category/${filterValue}?limit=${limit}&skip=${skip}`;
+    }
+    // If there's no search but there's a non-category filter
     else if (filterKey && filterValue) {
       url = `https://dummyjson.com/products/search?q=${filterValue}&limit=${limit}&skip=${skip}`;
     }

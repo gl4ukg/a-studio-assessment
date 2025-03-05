@@ -151,15 +151,22 @@ const Products: React.FC = () => {
           dispatch(resetFilters());
           dispatch(setCurrentTab('ALL'));
         }}
-        filterKeyOptions={[
-          { value: "title", label: "Title" },
-          { value: "brand", label: "Brand" },
-          { 
-            value: "category", 
-            label: "Category",
-            options: categories?.map(cat => ({ value: cat.slug, label: cat.name }))
-          },
-        ]}
+        filterKeyOptions={
+          currentTab === 'ALL' 
+            ? [
+              { value: "title", label: "Title" },
+              { value: "brand", label: "Brand" },
+              { 
+                value: "category", 
+                label: "Category",
+                options: categories?.map(cat => ({ value: cat.slug, label: cat.name }))
+              },
+            ]
+            : [
+              { value: "title", label: "Title" },
+              { value: "brand", label: "Brand" },
+            ]
+        }
       />
 
       {/* Products Table */}
