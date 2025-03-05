@@ -1,0 +1,13 @@
+@import "tailwindcss";
+
+
+@theme {
+  --color-black: #322625;
+  --color-gray: #ebebeb;
+  --color-blue: #c0e3e5;
+  --color-yellow: #fdc936;
+}
+
+body {
+  font-family: "Neutra Text", sans-serif;
+}
